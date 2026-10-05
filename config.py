@@ -28,7 +28,7 @@ CORPUS = os.getenv("AI201_CORPUS")
 # replace them with numbers that fit the documents you actually read.
 
 CHUNK_SIZE = 800  # characters per chunk
-CHUNK_OVERLAP = 120  # characters shared between neighbouring chunks
+CHUNK_OVERLAP = 0  # characters shared between neighbouring chunks
 
 
 # ─── Retrieval (Milestone 4) ─────────────────────────────────────────────────
