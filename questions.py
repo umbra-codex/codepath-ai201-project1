@@ -12,6 +12,12 @@ correct answer to contain — you'll use it in unit 2 when you build a scorer,
 and having written it now means you decided what "correct" meant before you saw
 any results.
 
+`answerable` says whether the corpus actually holds an answer to the question.
+The questions stay as written even where it doesn't: those are the ones
+criterion 5 is about, where the right move is to say the documents don't cover
+it. `scorer.py` reads this flag to decide which criterion a question counts
+toward.
+
 `OUT_OF_SCOPE` holds five questions your documents clearly don't cover. You
 need these in Milestone 4 to find where your relevance cutoff belongs, and
 again in unit 2, where `run_eval.py` runs them through the gate and writes what
@@ -25,23 +31,28 @@ QUESTIONS = [
     # {"question": "...", "expects": "..."},
     {
         "question": "What is the CPU, and how much memory is within the laptop?",
-        "expects": "The make and model of the CPU and the amount of memory.",
+        "expects": "16GB",
+        "answerable": True,
     },
     {
         "question": "When is the deadline to have my transfer credits accepted?",
-        "expects": "Any due dates that relate to transfer credits.",
+        "expects": "department",
+        "answerable": False,
     },
     {
         "question": "What are the most common regrets for first-year students?",
-        "expects": "If possible, provide a top-three list of the most common regrets for first-year students.",
+        "expects": "pass/fail",
+        "answerable": True,
     },
     {
         "question": "Is it too late to change majors as a third- or fourth-year student?",
-        "expects": "Check to see if it's possible to change majors as a third- or fourth-year student, then provide the positives and negatives for changing at that time.",
+        "expects": "extra semester",
+        "answerable": True,
     },
     {
         "question": "What is the deadline for assignments before they're considered late?",
-        "expects": "Provide the late policy for assignments.",
+        "expects": "10%",
+        "answerable": False,
     },
 ]
 
