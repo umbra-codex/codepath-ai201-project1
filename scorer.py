@@ -33,6 +33,8 @@ Matching ignores case and whitespace, so "16 GB" still matches "16GB".
 Criteria 1, 3 and 4 re-run retrieval rather than reading it from the log, since
 the log keeps sources but not chunk text. Retrieval is deterministic, so that
 gives the same chunks, as long as the index hasn't been rebuilt since the run.
+The hybrid-search setting is read from the log's header, so a log is scored
+with the retrieval it was run with, whatever `config.HYBRID` is now.
 The table warns if the retrieved sources don't match the log.
 """
 
@@ -40,6 +42,7 @@ import re
 import sys
 from pathlib import Path
 
+import config
 import gate
 import questions as qs
 
@@ -112,6 +115,9 @@ def _read_log(path: Path):
     text = path.read_text(encoding="utf-8")
     settings = re.search(r"top-k: (\d+) · relevance cutoff: ([\d.]+)", text)
     corpus = re.search(r"Corpus: `([^`]+)` \(index variant `([^`]+)`\)", text)
+    # Logs written before hybrid search existed have no such line, and they
+    # were searched by meaning only.
+    hybrid = re.search(r"Hybrid search[^\n]*: (on|off)", text)
     runs = re.findall(
         r"### (.+?) — run (\d+)\n\n.*?- Sources retrieved: (.*?)\n\n```\n(.*?)\n```",
         text,
@@ -122,6 +128,7 @@ def _read_log(path: Path):
         "threshold": float(settings.group(2)),
         "corpus": corpus.group(1),
         "variant": corpus.group(2),
+        "hybrid": bool(hybrid) and hybrid.group(1) == "on",
         "runs": [(q, int(n), s, a) for q, n, s, a in runs],
     }
 
@@ -145,6 +152,7 @@ def criterion_table(path: Path) -> str:
     from store import search
 
     log = _read_log(path)
+    config.HYBRID = log["hybrid"]
     top_k, corpus, variant = log["top_k"], log["corpus"], log["variant"]
     n_runs = max(run for _, run, _, _ in log["runs"])
 
@@ -194,7 +202,8 @@ def criterion_table(path: Path) -> str:
     ]
 
     lines = [
-        f"Scored from `{path}` by `scorer.py::criterion_table`.",
+        f"Scored from `{path}` by `scorer.py::criterion_table`, "
+        f"hybrid search {'on' if log['hybrid'] else 'off'}.",
         "",
         "| Criterion | Target | " + " | ".join(f"Run {i}" for i in range(1, n_runs + 1)) + " | Verdict |",
         "|---|---|" + "|".join(["---"] * n_runs) + "|---|",

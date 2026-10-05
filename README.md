@@ -482,7 +482,7 @@ counts this as a pass, and I count it as half a miss.
 RAM is the one number worth paying for"). No thread names a CPU, and that same
 reply says of everything else "you'll never notice".
 
-**The pattern.** The two full misses are one problem. Both ask for an official
+**The pattern:** The two full misses are one problem. Both ask for an official
 rule, a deadline that a department or an instructor sets, and both threads
 answer by pointing at whoever sets it: "the department decides", "the syllabus
 is accurate". The corpus is students talking about what happened to them. It
@@ -499,8 +499,8 @@ but the right thread already ranks first for all five, so I don't expect a
 change to chunking or retrieval to turn these into passes. The only stage that
 handled the gap was generation, which said the documents didn't have it.
 
-**Were my targets set low?** I missed one, so this isn't a clean sheet. But
-three of the four I met were safe.
+**Were my targets set low?** I missed one. Of the four I met, three were
+safe.
 
 Criterion 4 could not have failed. The 23 threads run from 317 to 793
 characters once loaded (320 to 796 bytes on disk, the figure in unit 1),
@@ -524,9 +524,21 @@ should rest on.
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** Hybrid search. `store.py::search` now ranks every chunk
+two ways, by meaning (cosine distance, as before) and by keyword match (BM25
+from `rank-bm25`), and merges the two rankings with reciprocal rank fusion in
+`store.py::_fuse`. The top three of the merged list come back. Each chunk
+keeps its cosine distance and the gate's 0.7 cutoff is the same, but what the
+gate sees can change: it compares the best distance among the three chunks
+returned, and the merged top three can leave out the nearest chunk. That can
+turn a pass into a refusal and never the reverse. `config.HYBRID` turns hybrid
+search on, and `AI201_HYBRID=0` turns it off to reproduce the before run.
+Nothing else changed: same chunks, same index, same prompt, same `top-k`.
 
-**Why I picked it:**
+**Why I picked it:** My diagnosis says the two deadline questions miss because
+the corpus has no deadline, and hybrid search is the retrieval change most
+likely to prove that wrong, since both questions contain the exact word
+"deadline". My prediction before running it is that criterion 1 stays at 3/5.
 
 <!-- Connect it to a specific diagnosis above in one sentence. If you can't,
      you picked a fix because it sounded impressive. -->

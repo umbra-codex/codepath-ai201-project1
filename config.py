@@ -35,6 +35,13 @@ CHUNK_OVERLAP = 120  # characters shared between neighbouring chunks
 
 TOP_K = 3  # how many chunks to pull back per question
 
+# Hybrid search (unit 2, Milestone 4). When on, `store.py::search` ranks chunks
+# by keyword match (BM25) as well as by meaning and fuses the two rankings.
+# Set AI201_HYBRID=0 to get the unit 1 behavior back, which is how the
+# "before" run log was produced.
+HYBRID = os.getenv("AI201_HYBRID", "1") != "0"
+RRF_K = 60  # reciprocal rank fusion constant; 60 is the usual default
+
 # The relevance gate. If the best chunk is further away than this, the system
 # refuses to answer instead of handing the model thin material.
 #

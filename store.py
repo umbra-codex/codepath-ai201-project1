@@ -18,7 +18,9 @@ rest of the project if they were wrong:
 """
 
 import os
+import re
 import shutil
+from collections import Counter
 from dataclasses import dataclass
 
 # Must be set BEFORE chromadb is imported. Without it, some Chroma versions
@@ -186,9 +188,12 @@ def search(
     sources: list[str] | None = None,
 ) -> list[Result]:
     """
-    Retrieve the chunks closest in meaning to a question.
+    Retrieve the chunks that best match a question.
 
-    Returns them nearest-first, each with its distance.
+    With `config.HYBRID` off this is meaning only: the nearest chunks,
+    nearest-first. With it on, every chunk is ranked by meaning and by keyword
+    match, the two rankings are fused, and the top of the fused list comes
+    back. Either way each Result carries its cosine distance.
     """
     top_k = top_k or config.TOP_K
     name = config.collection_name(corpus, variant)
@@ -202,9 +207,14 @@ def search(
 
     where = {"source": {"$in": sources}} if sources else None
 
+    # Hybrid asks for every chunk with its distance, so the keyword ranking has
+    # the whole collection to choose from. Fine at this corpus size; a large
+    # one would want a candidate pool instead.
+    wanted = collection.count() if config.HYBRID else min(top_k, collection.count())
+
     raw = collection.query(
         query_embeddings=embed([question]),
-        n_results=min(top_k, collection.count()),
+        n_results=wanted,
         where=where,
     )
 
@@ -221,7 +231,73 @@ def search(
                 produced_by=str(meta.get("produced_by", "unknown")),
             )
         )
+
+    if config.HYBRID:
+        results = _fuse(results, question)[:top_k]
     return results
+
+
+_WORD = re.compile(r"[a-z0-9]+")
+
+
+def _tokens(text: str) -> list[str]:
+    """Lowercase words and numbers, for keyword matching."""
+    return _WORD.findall(text.lower())
+
+
+def _fuse(semantic: list[Result], question: str) -> list[Result]:
+    """
+    Re-rank chunks by meaning and by keyword match together.
+
+    `semantic` is every candidate chunk, nearest-first. BM25 scores each one on
+    the words it shares with the question, and the two rankings are combined
+    with reciprocal rank fusion: a chunk earns 1 / (RRF_K + rank) from each
+    ranking. A chunk that shares no distinguishing word with the question earns
+    nothing from the keyword side.
+
+    Results keep their cosine distance, so the relevance gate still has a real
+    distance to compare against the cutoff. The gate sees only the chunks
+    returned, though, so if the nearest chunk is fused out of the top few, the
+    best distance it compares is larger than the true nearest one. That can
+    turn a pass into a refusal. It can never do the reverse.
+    """
+    if not semantic:
+        return []
+
+    try:
+        from rank_bm25 import BM25Okapi
+    except ImportError as exc:
+        raise RuntimeError(
+            "config.HYBRID is on, which needs the rank-bm25 package.\n"
+            "Install the course requirements first:\n"
+            "    pip install -r requirements.txt\n"
+            "Or set AI201_HYBRID=0 to search by meaning only."
+        ) from exc
+
+    docs = [_tokens(r.text) for r in semantic]
+
+    # A word in more than half the chunks ("the", "reply", "votes") says
+    # nothing about topic. BM25Okapi floors such a word's weight to a small
+    # positive number instead of zero, which would hand every chunk a keyword
+    # rank, so those words are dropped from the question first.
+    in_chunks = Counter(word for doc in docs for word in set(doc))
+    query = [w for w in _tokens(question) if in_chunks[w] <= len(docs) / 2]
+
+    scores = BM25Okapi(docs).get_scores(query)
+    by_keyword = sorted(
+        (i for i in range(len(semantic)) if scores[i] > 0),
+        key=lambda i: -scores[i],
+    )
+    keyword_rank = {i: rank for rank, i in enumerate(by_keyword, start=1)}
+
+    def fused(i: int) -> float:
+        score = 1 / (config.RRF_K + i + 1)  # i is the 0-based semantic rank
+        if i in keyword_rank:
+            score += 1 / (config.RRF_K + keyword_rank[i])
+        return score
+
+    order = sorted(range(len(semantic)), key=lambda i: -fused(i))
+    return [semantic[i] for i in order]
 
 
 def index_exists(corpus: str | None = None, variant: str = "default") -> bool:

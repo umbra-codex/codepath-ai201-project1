@@ -193,6 +193,7 @@ def write_report(rows, transcript, gate_rows, args, corpus, top_k, threshold, sc
         f"- Retrieval: `store.py::search`, chunks from `chunker.py::split_documents`",
         f"- Corpus: `{corpus}` (index variant `{args.variant}`)",
         f"- top-k: {top_k} · relevance cutoff: {threshold}",
+        f"- Hybrid search (BM25 fused with semantic): {'on' if config.HYBRID else 'off'}",
         f"- Runs per question: {n}, caching off",
         f"- When: {dt.datetime.now().strftime('%Y-%m-%d %H:%M')}",
         "",
