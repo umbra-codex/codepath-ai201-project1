@@ -453,6 +453,75 @@ Based on the provided documents, there is no mention of a specific deadline for 
 
      Milestone 3. -->
 
+Criterion 1 is my only miss, and it missed on the same two questions in all
+three runs. Retrieval is deterministic, so that is one miss per question and
+not six.
+
+**"When is the deadline to have my transfer credits accepted?"** None of the
+five stages broke here. The nearest is loading, in the sense that the
+documents I loaded don't hold the fact, but `ingest.py` read all 23 threads
+without a problem. `python app.py retrieve` ranks
+`thread_transfer_credits.txt` first at 0.4800, whole, in one chunk. It is the
+only thread that mentions transfer credits, and it is about whether they count
+toward the major ("the department decides, not the registrar"). It never gives
+a date. Generation said the documents had no such deadline, which was correct.
+The miss is in my question. I asked for a fact the corpus doesn't have, and I
+flagged it `answerable: False` in `questions.py` for that reason, so criterion
+1 could not pass it.
+
+**"What is the deadline for assignments before they're considered late?"** The
+same thing. `thread_late_work.txt` ranks first at 0.4132. It covers what
+happens once work is late ("If it says 10% a day, it's 10% a day") and says
+the rule comes from each instructor's syllabus, so there is no cutoff in it to
+retrieve. The word "deadline" appears in three threads and none of them says
+when one is.
+
+**"What is the CPU, and how much memory is within the laptop?"** The scorer
+counts this as a pass, and I count it as half a miss.
+`thread_laptop_specs.txt` ranks first at 0.4404 and gives the memory ("16GB of
+RAM is the one number worth paying for"). No thread names a CPU, and that same
+reply says of everything else "you'll never notice".
+
+**The pattern.** The two full misses are one problem. Both ask for an official
+rule, a deadline that a department or an instructor sets, and both threads
+answer by pointing at whoever sets it: "the department decides", "the syllabus
+is accurate". The corpus is students talking about what happened to them. It
+can answer the questions about regrets and changing majors from that
+experience. It has no dates. The CPU half of the laptop question is a smaller
+version of the same gap: I asked for a spec, and the thread only says what
+mattered in practice.
+
+Distance can't see this. The two unanswerable questions came back at 0.4132
+and 0.4800, inside the range of the three the corpus can answer (0.4019,
+0.4404 and 0.5956). A close distance means the topic matched. It says nothing
+about whether the answer is in the chunk. Five questions is a small sample,
+but the right thread already ranks first for all five, so I don't expect a
+change to chunking or retrieval to turn these into passes. The only stage that
+handled the gap was generation, which said the documents didn't have it.
+
+**Were my targets set low?** I missed one, so this isn't a clean sheet. But
+three of the four I met were safe.
+
+Criterion 4 could not have failed. The 23 threads run from 317 to 793
+characters once loaded (320 to 796 bytes on disk, the figure in unit 1),
+`CHUNK_SIZE` is 800, and `chunker.py` keeps a document whole when it fits, so
+I got 23 chunks with one thread in each. To make it a test I'd check all 23
+chunks instead of a sample of five, at a chunk size small enough to split
+threads, and require that no chunk mixes two threads or cuts a reply in half.
+
+Criterion 3 was safe too. My five out-of-scope questions are nowhere near the
+corpus (the capital of Mongolia, a diesel oil change), and the nearest came
+back at 0.828 against a 0.7 cutoff. I'd tighten the target from 4 of 5 to 5 of
+5. The harder case is a campus question the corpus doesn't answer. My two
+deadline questions are that case, and they passed the gate at 0.4132 and
+0.4800, so the gate does nothing for them. Criterion 5 is the one that covers
+them, and it rests on only two questions.
+
+Criterion 2 is already at 5 of 5, so the number can't go up, but the check is
+loose: an answer passes if it mentions any retrieved filename. I'd tighten it
+to require the name of the top-ranked thread, which is the one the answer
+should rest on.
+
 ## The Improvement
 
 **What I changed:**
