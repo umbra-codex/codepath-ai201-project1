@@ -237,6 +237,8 @@ a cell of 2/2 can't be measured against "4 of 5" as the target is written.
 Pooled across the three runs it is 6 of 6 tries, which is above a four-in-five
 rate, so I marked it MET. Testing the target as written needs at least five
 tries where the chunks lack the answer.
+I revised criterion 5 in `criteria.md` for this reason, and its verdict below
+is against the revision.
 
 The question table in the results file shows `pass` on all 15 runs, which
 measures something different. `scorer.py::judge` passes a run when it meets
@@ -423,13 +425,13 @@ Based on the provided documents, there is no mention of a specific deadline for 
 
      Milestone 2. -->
 
-| #   | Criterion | Verdict | How I decided |
-| --- | --------- | ------- | ------------- |
-| 1   |           |         |               |
-| 2   |           |         |               |
-| 3   |           |         |               |
-| 4   |           |         |               |
-| 5   |           |         |               |
+| #   | Criterion                                        | Verdict | How I decided |
+| --- | ------------------------------------------------ | ------- | ------------- |
+| 1   | Retrieved chunks contain the answer              | MISSED  | 3/5 on every run against a target of 4. I counted a question only when the corpus can answer it and its expected phrase is in a retrieved chunk, and the transfer-credit and late-work questions ask for deadlines no thread gives. The laptop question got credit on `16GB` alone though no thread names a CPU, so counting only full answers gives 2/5. |
+| 2   | Every answer names a source                      | MET     | All 15 answers mention the filename of at least one retrieved thread, inline or on a `Source:` line. I counted the two deadline questions too, because they cite the thread they checked while saying it has no deadline. |
+| 3   | The relevance gate stops out-of-corpus questions | MET     | The gate refused all five `OUT_OF_SCOPE` questions in its one pass. The nearest was the ibuprofen question at 0.828 against a 0.7 cutoff, so none of them was close. |
+| 4   | One topic per chunk                              | MET     | Each of the five sampled chunks comes from one file and has one `THREAD:` header, so none of them mixes two threads. That is 5/5 against a target of 4, and it was not close. |
+| 5   | No hallucinated answers                          | MET (revised) | Closest of the five, and I revised it. The original could not be measured as written: it quotes a sentence no answer uses word for word, and only the two deadline questions apply, so a run has two tries where it asks for five. Against the revision in `criteria.md` (any wording that says the documents don't cover it, as a rate over the tries that apply) it is 2/2 on every run, and I read all six answers to check that none offers a deadline of its own. |
 
 ## Diagnoses
 

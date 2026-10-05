@@ -73,6 +73,23 @@ Distinct from criterion #3 (out-of-corpus). This catches in-corpus-adjacent
 questions where retrieval returns chunks, but none actually answer them.
 That's the case where a model most tempted to guess.
 
+> **Revised in unit 2:** When the retrieved chunks don't contain the answer,
+> the answer says the documents don't cover it instead of answering anyway, in
+> at least four of every five tries where that applies. Any wording that says
+> so counts: the gate's refusal, "no mention of", "do not cover", "not enough
+> information". The full list is `ADMISSIONS` in `scorer.py`. The rate has to
+> hold in every run.
+>
+> **Why revised:** I couldn't measure the original. It quotes one exact
+> sentence, and nothing in my system produces it. The gate's fixed refusal in
+> `gate.py` reads "I don't have enough information about that.", and the prompt
+> in `generate.py` only tells the model to say it doesn't have enough
+> information, so each answer is worded differently ("there is no mention of a
+> specific deadline"). The original also counts five tries, and only two of my
+> five questions retrieve chunks that lack the answer, so a run has two tries.
+> The four-in-five bar has not moved. The revision changes what counts as
+> saying so, and it takes the rate over the tries that exist.
+
 ---
 
 <!-- ─────────────────────────────────────────────────────────────────────────
