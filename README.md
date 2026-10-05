@@ -147,7 +147,13 @@ Sources retrieved: thread_laptop_specs.txt, thread_laundry_timing.txt, thread_pr
 
 ```
 
-**My relevance cutoff:**
+**My relevance cutoff:** 0.7, set as `THRESHOLD` in `config.py`.
+
+The five questions about my corpus came back between 0.402 and 0.596. The five
+out-of-scope ones came back between 0.828 and 0.952. Nothing landed in between,
+which leaves a gap of 0.232. I put the cutoff at 0.7, near the middle of that
+gap (0.712). The farthest in-corpus question clears it by 0.104 and the nearest
+out-of-scope one misses it by 0.128. All ten distances are in the table below.
 
 <!-- The number you set in config.py, and how you got there.
 
