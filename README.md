@@ -229,6 +229,51 @@ what I expected.
      claims earns nothing.
      ───────────────────────────────────────────────────────────────────────── -->
 
+## Stretch Feature: Metadata Filtering
+
+`--source` on `ask` and `retrieve` limits the search to the threads I name, and
+it can be repeated to allow several. `app.py` passes the filenames to
+`store.py::search`, which turns them into a Chroma `where` clause
+(`{"source": {"$in": sources}}`), so chunks from other threads are never
+ranked.
+
+Here is one of my test questions run both ways.
+
+**Without the filter:**
+
+```
+$ python app.py retrieve "What is the CPU, and how much memory is within the laptop?"
+
+Question: What is the CPU, and how much memory is within the laptop?
+
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.4404     thread_laptop_specs.txt          THREAD: How much laptop do I actually need for CS co...
+2   0.9507     thread_meal_plan_tier.txt        THREAD: Which meal plan tier is right?  --- reply 1 ...
+3   0.9343     thread_study_spots.txt           THREAD: Best study spots that aren't the library?  -...
+
+Gate: best distance 0.440 is under the 0.7 cutoff
+```
+
+**With the filter:**
+
+```
+$ python app.py retrieve "What is the CPU, and how much memory is within the laptop?" --source thread_laptop_specs.txt
+
+Question: What is the CPU, and how much memory is within the laptop?
+
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.4404     thread_laptop_specs.txt          THREAD: How much laptop do I actually need for CS co...
+
+Gate: best distance 0.440 is under the 0.7 cutoff
+```
+
+Without the filter, two of the three results are the meal plan and study spots
+threads at 0.9507 and 0.9343, and neither is about laptops. With it, only the
+laptop thread comes back. Its distance is 0.4404 in both runs, so the filter
+removes the other threads and leaves the scoring alone.
+
 ---
 
 # Unit 2
