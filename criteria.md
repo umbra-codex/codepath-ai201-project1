@@ -24,11 +24,11 @@ contains the answer.
 
 **Why this target:**
 My corpus is 23 student threads with one topic each, and every thread is short
-enough (317 to 793 characters) to fit whole in one 800-character chunk. A
+enough (320 to 796 characters) to fit whole in one 800-character chunk. A
 question about a thread's topic should bring that thread back in the top 3, so
-most of my questions should pass. I left room for one miss because of the
-first-year regrets question. Its best distance was 0.596, the farthest of my
-five, so it is the one most likely to lose its thread from the top 3.
+most of my questions should pass. I left room for one miss. The weakest match
+of my five is the first-year regrets question at 0.596, so that is where I had
+the least margin.
 <!-- e.g. "One of my questions is about a topic only two documents mention, so
      I expect that one to be hard." -->
 
