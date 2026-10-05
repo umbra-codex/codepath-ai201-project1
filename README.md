@@ -215,6 +215,15 @@ keyword matches did nothing, since BM25 gives common words a small score and
 every chunk passed. Claude fixed it by dropping words that appear in more than
 half the chunks.
 
+**6.** After grading, the feedback said criteria 1 to 3 had no reasons and the
+cutoff label was empty. I asked Claude to draft the three reasons, a paragraph
+under criterion 5 and the cutoff paragraph from my distance table, `config.py`
+and `generate.py`. DeepSeek reviewed the commits and found no wrong numbers.
+It did point out that the criterion 1 reason called the first-year regrets
+question the one I expected to miss, when my misses were the two deadline
+questions. That sentence now gives the 0.596 distance and makes no claim about
+what I expected.
+
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
