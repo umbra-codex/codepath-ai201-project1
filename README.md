@@ -255,6 +255,10 @@ Question: What is the CPU, and how much memory is within the laptop?
 Gate: best distance 0.440 is under the 0.7 cutoff
 ```
 
+Results 2 and 3 are out of distance order because hybrid search ranks by
+keyword match and meaning together, and the distance column shows cosine
+distance only.
+
 **With the filter:**
 
 ```
