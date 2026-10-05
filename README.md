@@ -278,6 +278,58 @@ threads at 0.9507 and 0.9343, and neither is about laptops. With it, only the
 laptop thread comes back. Its distance is 0.4404 in both runs, so the filter
 removes the other threads and leaves the scoring alone.
 
+## Stretch Feature: Conversation Memory
+
+In interactive mode (`python app.py ask` with no question), each answered turn
+is kept, and the last `MEMORY_TURNS` of them (2, in `config.py`) go along with
+the next question. Before searching, `generate.py::condense_question` rewrites
+a follow-up into a question that stands on its own, so retrieval and the gate
+both see the full question. `app.py` prints the rewrite as `(searched as: ...)`.
+
+**Two turns in one session:**
+
+```
+$ python app.py ask
+Ask a question, or press Enter on an empty line to quit.
+
+> When should I use the pass/fail option?
+  (best distance 0.504, cutoff 0.7)
+
+Based on the provided documents, you should use the pass/fail option for a course outside your major that you are taking out of curiosity (*thread_pass_fail.txt*). You can declare it as late as week eight, allowing you to take the midterm first and then decide (*thread_pass_fail.txt* and *thread_first_year_regret.txt*).
+
+The documents do not cover why else you might want to use it beyond these points.
+
+Sources retrieved: thread_first_year_regret.txt, thread_internship_timing.txt, thread_pass_fail.txt
+
+> How many times can I use it?
+  (best distance 0.537, cutoff 0.7)
+  (searched as: How many times can I use the pass/fail option?)
+
+Based on the provided documents, you can use the pass/fail option two times per year and eight times across your degree (*thread_pass_fail.txt*).
+
+Sources retrieved: thread_clubs.txt, thread_first_year_regret.txt, thread_pass_fail.txt
+```
+
+The second question never says "pass/fail". It was searched as "How many times
+can I use the pass/fail option?", matched at 0.537, and the answer came from
+`thread_pass_fail.txt`.
+
+**The same follow-up in a new session, with no first turn:**
+
+```
+$ python app.py ask
+Ask a question, or press Enter on an empty line to quit.
+
+> How many times can I use it?
+  (best distance 0.796, cutoff 0.7)
+
+I don't have enough information about that.
+```
+
+With no earlier turn there is nothing to rewrite the question from. Its best
+distance is 0.796, over the 0.7 cutoff, so the gate refuses it. The first turn
+is the only difference between the two runs.
+
 ---
 
 # Unit 2
