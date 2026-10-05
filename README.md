@@ -95,7 +95,7 @@ Less than the recommended spec page says. 16GB of RAM is the one number worth pa
 Adding: the lab machines exist and are better than anything you'll buy. For the heavy assignments people just use those.
 
 --- reply 3 (12 votes) ---
-I did two years on an 8GB machine and it was fine until the last project, chunker.py::split_documentsat which point it very much wasn't. 16 is the answer.
+I did two years on an 8GB machine and it was fine until the last project, at which point it very much wasn't. 16 is the answer.
 ```
 
 **Chunk 4** — source: thread_office_hours_etiquette.txt#0 `— produced by: chunker.py::split_documents`
@@ -187,6 +187,24 @@ can think of questions for Milestone 2.
 
 **2.** I asked Claude for a guide to create the split_documents function and had
 it verify the logic and output when completed.
+
+**Unit 2**
+
+**3.** I asked Claude to turn my run logs into the tables and draft the unit 2
+write-up here, one step at a time, and had a second model (DeepSeek, through
+Hermes) review each step before I committed. Claude marked criterion 5 MET.
+The review said that didn't hold up as written, so I revised the criterion in
+criteria.md.
+
+**4.** For the diagnosis I asked Claude to find the pattern in my misses. Its
+first try called the stage "loading", miscounted my misses, and gave a pattern
+that just restated criterion 1. The review caught all three. The pattern now
+in Diagnoses came from the second try.
+
+**5.** Claude wrote the hybrid search. The review found that its check for
+keyword matches did nothing, since BM25 gives common words a small score and
+every chunk passed. Claude fixed it by dropping words that appear in more than
+half the chunks.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
@@ -692,9 +710,70 @@ questions at the same distances.
 
      Milestone 5. -->
 
+Two criteria are missed after the fix, and the fix caused one of them.
+
+**Criterion 2, every answer names a source (4/5, 4/5, 5/5):** Hybrid search
+broke this, and it is still switched on in `config.py`. The quick repair is
+`AI201_HYBRID=0`, which gives back the before run's 5/5. A better repair
+would keep keyword search and stop it from pushing out the nearest chunk,
+either by weighting the meaning ranking above the keyword one in
+`store.py::_fuse` or by always keeping the nearest chunk in the top three.
+Stemming would not help, since the regrets thread has no form of the word
+"regret" in it. There is a second fix in the prompt: `GROUNDING_INSTRUCTION`
+in `generate.py` asks for the document an answer came from and says nothing
+about naming the files checked when there is no answer. I stopped because the
+milestone asks for one change and an honest result. Adjusting the fusion
+until my five questions pass again would fit the fix to the test, and I
+couldn't tell whether it helped anywhere else.
+
+**Criterion 1, retrieved chunk contains the answer (3/5, 3/5, 3/5):**
+Unchanged, and no change to my pipeline will move it. The two questions that
+fail ask for deadlines the corpus doesn't have. What would fix it sits outside
+the code: a document that states the policy, which I don't have and won't
+write to pass my own test, or two replacement questions the threads can
+answer. I stopped because swapping questions after seeing which ones failed
+would be moving the target. The hybrid run was my check that retrieval wasn't
+hiding an answer, and criterion 1 came back the same.
+
+**Also weak, though no criterion caught it:** My scorer checks criterion 1
+with one expected phrase per question. After the fix it passed the regrets
+question on `pass/fail` with the regrets thread missing. Without that pass
+the after score is 2/5. It also passes the laptop question on `16GB` when no
+thread names a CPU. I left the scorer's checks alone between the two runs so
+both logs are scored the same way.
+
 ## What I'd Do Differently
 
 <!-- Knowing what you know now — which of your five criteria would you write
      differently, and why?
 
      Milestone 5. -->
+
+Criterion 5 first, and criterion 1 with it, because they turned out to be one
+mistake.
+
+Criterion 5 was the least consistent of the five. It asked for "four of five
+tries" when only two of my questions ever trigger it, so every run was 2/2,
+and it quoted an exact sentence that nothing in my system produces. Which
+questions it applies to is decided by an `answerable` flag I set by hand in
+`questions.py`, so it measures my labeling as much as the system. I revised
+the wording in unit 2. The sample is still two questions.
+
+Criterion 1 has the other half of the problem. Both criteria count over the
+same five questions. Every question I wrote to test criterion 5 is one the
+corpus can't answer, so it is a guaranteed miss on criterion 1. With two of
+them in the set, criterion 1 was capped at 3/5 against a target of 4 before I
+ran anything.
+
+Next unit I'd write two question sets before any run: five the corpus can
+answer, for criterion 1, and five on-topic questions it can't, for criterion
+5. Criterion 1 would read "for at least 4 of 5 answerable questions, the
+thread that answers the question is in the top three". That names the thread,
+where my scorer checked for one expected phrase and passed the regrets
+question after its thread was gone. Criterion 5 would read "for at least 4 of
+5 unanswerable questions, the answer says the documents don't cover it, on
+every run".
+
+I'd also write down how each criterion is checked at the same time as its
+target. The checks I added later in `scorer.py` ended up deciding what counted
+as a pass.
