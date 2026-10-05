@@ -91,6 +91,7 @@ Distinct from criterion #3 (out-of-corpus). This catches in-corpus-adjacent
 questions where retrieval returns chunks, but none actually answer them.
 That's the case where a model most tempted to guess.
 
+**Added in unit 2, after grading:**
 In my corpus that case is the two deadline questions. `thread_late_work.txt`
 talks about deadlines ("If it says 10% a day, it's 10% a day") and
 `thread_transfer_credits.txt` says the department decides, but neither thread
