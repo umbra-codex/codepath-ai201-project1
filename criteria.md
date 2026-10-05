@@ -23,6 +23,12 @@ For at least 4 of my 5 test questions, the retrieved chunks include one that
 contains the answer.
 
 **Why this target:**
+My corpus is 23 student threads with one topic each, and every thread is short
+enough (317 to 793 characters) to fit whole in one 800-character chunk. A
+question about a thread's topic should bring that thread back in the top 3, so
+most of my questions should pass. I left room for one miss because of the
+first-year regrets question. Its best distance was 0.596, the farthest of my
+five, so it is the one most likely to lose its thread from the top 3.
 <!-- e.g. "One of my questions is about a topic only two documents mention, so
      I expect that one to be hard." -->
 
@@ -33,6 +39,12 @@ contains the answer.
 Every answer the system produces names at least one source document.
 
 **Why this target:**
+All five, because naming a source doesn't depend on how hard the question is.
+`generate.py::build_prompt` labels every excerpt `[from <filename>]`, and
+`GROUNDING_INSTRUCTION` tells the model to name the document its answer came
+from. The filename is in front of the model on every call. A miss would mean
+the model ignored an instruction. That is a fault in my prompt whatever the
+question is, so I didn't leave room for one.
 <!-- Why all five and not four? What about your setup makes that achievable —
      or what would have to go wrong for it not to be? -->
 
@@ -50,6 +62,12 @@ in at least 4 of 5 tries.
      just keep five of them, or the "4 of 5" above has nothing to be 4 of. -->
 
 **Why this target:**
+There was a clean gap. My five in-corpus questions came back between 0.402 and
+0.596, and the five out-of-scope ones between 0.828 and 0.952, with nothing in
+between. I set `THRESHOLD` to 0.7, inside that gap. I kept the target at 4 of 5
+because the gap is measured on only ten questions. The nearest out-of-scope
+one, the ibuprofen question at 0.828, is 0.128 from the cutoff, so a change to
+my chunking or my embedding model could move one question across.
 <!-- What did your distances look like when you set the cutoff in Milestone 4?
      Was there a clean gap, or did the two groups overlap? -->
 
