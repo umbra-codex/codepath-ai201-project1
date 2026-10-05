@@ -200,8 +200,9 @@ criteria.md.
 first try called the stage "loading", miscounted my misses, and gave a pattern
 that just restated criterion 1. The review caught all three. The pattern now
 in Diagnoses came from the second try. After grading, the feedback said every
-miss has to name a stage, and "none of the five stages broke" did not. The
-diagnosis names loading again.
+miss has to name a stage and say what that stage did, and "none of the five
+stages broke" did neither. The diagnosis names loading again, and this time it
+says what `load_documents` did with the 23 files.
 
 **5.** Claude wrote the hybrid search. The review found that its check for
 keyword matches did nothing, since BM25 gives common words a small score and
@@ -478,29 +479,36 @@ three runs. Retrieval is deterministic, so that is one miss per question and
 not six.
 
 **"When is the deadline to have my transfer credits accepted?"** The stage is
-loading, the only stage that decides which facts the pipeline has. `ingest.py`
-read all 23 threads without a problem, and none of them states this deadline.
-`python app.py retrieve` ranks `thread_transfer_credits.txt` first at 0.4800,
-whole, in one chunk. It is the only thread that mentions transfer credits, and
-it is about whether they count toward the major ("the department decides, not
-the registrar"). It never gives a date. Generation said the documents had no
-such deadline, which was correct. I asked for a fact that was never loaded,
-and I flagged it `answerable: False` in `questions.py` for that reason, so
-criterion 1 could not pass it.
+loading, the only stage that decides which facts the pipeline has.
+`ingest.py::load_documents` reads every `.txt` and `.md` file in one folder,
+the one `AI201_CORPUS` names, and makes one `Document` per file. I pointed it
+at `corpora/advice_threads/documents`, so it loaded 23 student threads and no
+policy document. Its only check is a count: `python ingest.py` reports `23
+documents, 12,490 characters`. It doesn't look at what the files say, so a
+corpus without this deadline loads the same as one that has it, with no error.
+The date was in none of the 23 files, so it was not in any chunk or vector,
+and the later stages had nothing to find. `python app.py retrieve` ranks
+`thread_transfer_credits.txt` first at 0.4800, whole, in one chunk. It is the
+only thread that mentions transfer credits, and it is about whether they count
+toward the major ("the department decides, not the registrar"). It never gives
+a date. Generation said the documents had no such deadline, which was correct.
+I asked for a fact that was never loaded, and I flagged it `answerable: False`
+in `questions.py` for that reason, so criterion 1 could not pass it.
 
 **"What is the deadline for assignments before they're considered late?"**
-Loading again. `thread_late_work.txt` ranks first at 0.4132. It covers what
-happens once work is late ("If it says 10% a day, it's 10% a day") and says
-the rule comes from each instructor's syllabus, so there is no cutoff in it to
-retrieve. The word "deadline" appears in three threads and none of them says
-when one is.
+Loading again, by the same mechanism: `load_documents` read 23 files and the
+cutoff is in none of them. `thread_late_work.txt` ranks first at 0.4132. It
+covers what happens once work is late ("If it says 10% a day, it's 10% a day")
+and says the rule comes from each instructor's syllabus, so there is no cutoff
+in it to retrieve. The word "deadline" appears in three threads and none of
+them says when one is.
 
 **"What is the CPU, and how much memory is within the laptop?"** The scorer
 counts this as a pass, and I count it as half a miss.
 `thread_laptop_specs.txt` ranks first at 0.4404 and gives the memory ("16GB of
 RAM is the one number worth paying for"). The missing half is a loading miss
-too: none of the 23 files names a CPU. That same reply says of everything else
-"you'll never notice".
+too: `load_documents` read the same 23 files, and none of them names a CPU.
+That same reply says of everything else "you'll never notice".
 
 **The pattern:** The two full misses are one problem, and it sits at loading.
 Both ask for an official
