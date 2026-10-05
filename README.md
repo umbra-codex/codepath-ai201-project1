@@ -285,8 +285,12 @@ is kept, and the last `MEMORY_TURNS` of them (2, in `config.py`) go along with
 the next question. Before searching, `generate.py::condense_question` rewrites
 a follow-up into a question that stands on its own, so retrieval and the gate
 both see the full question. `app.py` prints the rewrite as `(searched as: ...)`.
+A turn the gate refuses is not kept.
 
 **Two turns in one session:**
+
+I piped the questions in, and piped input isn't echoed, so the terminal showed
+a bare `> `. Each question below is written where it would appear typed.
 
 ```
 $ python app.py ask
@@ -329,6 +333,11 @@ I don't have enough information about that.
 With no earlier turn there is nothing to rewrite the question from. Its best
 distance is 0.796, over the 0.7 cutoff, so the gate refuses it. The first turn
 is the only difference between the two runs.
+
+Not every follow-up needs the memory. I first tried "How late can I declare
+it?", and it got the right answer in a new session too, at 0.625, because
+"declare" was enough to find the pass/fail thread. I picked the follow-up above
+because it has no word that points at a thread.
 
 ---
 
