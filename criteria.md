@@ -91,6 +91,16 @@ Distinct from criterion #3 (out-of-corpus). This catches in-corpus-adjacent
 questions where retrieval returns chunks, but none actually answer them.
 That's the case where a model most tempted to guess.
 
+In my corpus that case is the two deadline questions. `thread_late_work.txt`
+talks about deadlines ("If it says 10% a day, it's 10% a day") and
+`thread_transfer_credits.txt` says the department decides, but neither thread
+gives a date. Both came back closer than my 0.7 cutoff, at 0.413 and 0.480, so
+the gate lets them through and the only thing stopping a guess is one line in
+`GROUNDING_INSTRUCTION`: "If the documents don't cover the question, say you
+don't have enough information. Do not guess." The gate is code and does the
+same thing every time. That line is an instruction to a model, and the model's
+wording changes from run to run, so I allowed one miss in five.
+
 > **Revised in unit 2:** When the retrieved chunks don't contain the answer,
 > the answer says the documents don't cover it instead of answering anyway, in
 > at least four of every five tries where that applies. Any wording that says
