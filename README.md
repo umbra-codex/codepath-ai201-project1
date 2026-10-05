@@ -215,15 +215,202 @@ it verify the logic and output when completed.
 
 | Criterion                              | Target | Run 1 | Run 2 | Run 3 | Verdict |
 | -------------------------------------- | ------ | ----- | ----- | ----- | ------- |
-| 1. Retrieved chunk contains the answer | 4 of 5 |       |       |       |         |
-| 2. Every answer names a source         | 5 of 5 |       |       |       |         |
-| 3. Gate stops out-of-corpus questions  | 4 of 5 |       |       |       |         |
-| 4.                                     |        |       |       |       |         |
-| 5.                                     |        |       |       |       |         |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 3/5   | 3/5   | 3/5   | MISSED  |
+| 2. Every answer names a source         | 5 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 3. Gate stops out-of-corpus questions  | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 4. One topic per chunk                 | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 5. No hallucinated answers             | 4 of 5 | 2/2   | 2/2   | 2/2   | MET     |
+
+Scored from `results/run_2026-09-30_1553_before.md` by `scorer.py::criterion_table`.
+
+Criteria 3 and 4 are each measured in one deterministic pass, so the same
+number goes in all three run columns.
+
+Criterion 1 can't reach its target with this question set. Two of my five
+questions (transfer-credit deadline, late-work deadline) ask for something the
+corpus doesn't hold, so the most it can score is 3/5. It stays MISSED against
+the 4-of-5 target I set in unit 1, and I diagnose it under Diagnoses.
+
+Criterion 5 only applies when the retrieved chunks don't contain the answer,
+which is those same two questions. Each run therefore has 2 tries, not 5, and
+a cell of 2/2 can't be measured against "4 of 5" as the target is written.
+Pooled across the three runs it is 6 of 6 tries, which is above a four-in-five
+rate, so I marked it MET. Testing the target as written needs at least five
+tries where the chunks lack the answer.
+
+The question table in the results file shows `pass` on all 15 runs, which
+measures something different. `scorer.py::judge` passes a run when it meets
+criterion 1 or criterion 5, plus criterion 2. The table above counts each
+criterion on its own, which is why criterion 1 reads 3/5.
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
      Name the file and function that produced it. -->
+
+### Real output
+
+Everything below is run 1 from `results/run_2026-09-30_1553_before.md`, except
+the chunk text for criteria 1 and 4. The results file keeps sources but not
+chunk text, so those two were printed again with `app.py`. Retrieval is
+deterministic and the distances match the log.
+
+**Criterion 1. Retrieved chunk contains the answer**
+
+Question: "Is it too late to change majors as a third- or fourth-year student?"
+Expected phrase: `extra semester`.
+
+Retrieval, produced by `store.py::search` (printed by `python app.py retrieve`).
+The `Gate:` line comes from `gate.py::check`:
+
+```
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.4019     thread_changing_major.txt        THREAD: How hard is it to change major in second yea...
+2   0.6000     thread_pass_fail.txt             THREAD: When should you actually use the pass/fail o...
+3   0.6916     thread_first_year_regret.txt     THREAD: What do you wish you'd known in first year? ...
+
+Gate: best distance 0.402 is under the 0.7 cutoff
+```
+
+The top chunk in full, produced by `chunker.py::split_documents` (printed by
+`python app.py chunks --from-doc thread_changing_major.txt`):
+
+```
+======================================================================
+Chunk 1  |  source: thread_changing_major.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+THREAD: How hard is it to change major in second year?
+
+--- reply 1 (22 votes) ---
+Administratively trivial — it's a form. The real question is whether the credits you've taken map onto the new requirements.
+
+--- reply 2 (27 votes) ---
+Depends enormously on the direction. Moving within the sciences is usually fine. Moving into a science from outside in your third year means an extra semester more often than not.
+
+--- reply 3 (19 votes) ---
+Talk to the department adviser for the major you want, not your current one. They know the exceptions.
+```
+
+**Criterion 2. Every answer names a source**
+
+Same question, run 1. The answer text is produced by
+`generate.py::answer_from_chunks`, called from `run_eval.py::run_once`, and
+written to the results file by `run_eval.py::main`.
+
+- Best distance: 0.4019 (passed the gate)
+- Sources retrieved: thread_changing_major.txt, thread_first_year_regret.txt, thread_pass_fail.txt
+
+```
+Based on the provided documents, moving into a science from outside in your third year often means an extra semester, but the documents do not cover whether it is too late to change majors as a fourth-year student (*thread_changing_major.txt*).
+```
+
+**Criterion 3. Gate stops out-of-corpus questions**
+
+Produced by `run_eval.py::check_out_of_scope`, cutoff 0.7. Refused 5 of 5.
+
+| Out-of-scope question | Best distance | Gate |
+|---|---|---|
+| What is the capital of Mongolia? | 0.948 | refused |
+| How do I change the oil in a diesel engine? | 0.930 | refused |
+| Who won the 1994 World Cup? | 0.952 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.828 | refused |
+| How do I write a for loop in Rust? | 0.871 | refused |
+
+**Criterion 4. One topic per chunk**
+
+The five sampled chunks, produced by `chunker.py::split_documents` (printed by
+`python app.py chunks`). Each has one source file and one `THREAD:` header.
+
+```
+23 chunks total. Showing 5, spread across the corpus.
+
+======================================================================
+Chunk 1  |  source: thread_bike_commute.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+THREAD: Is a bike worth it for a 20 minute walk commute?
+
+--- reply 1 (14 votes) ---
+Yeah. Cuts an 18 minute walk to about 6. The thing nobody mentions is storage — covered bike parking exists at three buildings and is full by 9am at all three.
+
+--- reply 2 (9 votes) ---
+Counterpoint, I sold mine. Between November and March the paths are either icy or salted and salt destroys a drivetrain in one season.
+
+--- reply 3 (22 votes) ---
+Both true. I keep a cheap bike for September to November and walk the rest of the year. Total cost was about $120 for the bike and I don't care what happens to it.
+
+--- reply 4 (5 votes) ---
+If you do get one, the campus does free registration and it's the only reason I got mine back after it was taken.
+
+======================================================================
+Chunk 2  |  source: thread_first_gen.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+THREAD: Anything specific for first-generation students?
+
+--- reply 1 (33 votes) ---
+The advising office has a specific programme and it is genuinely good, but it is opt-in and badly publicised. Ask for it by name.
+
+--- reply 2 (41 votes) ---
+The thing I'd say: the unwritten rules are the hard part, not the coursework. Ask about the unwritten rules explicitly. People are happy to explain them and nobody volunteers them.
+
+--- reply 3 (16 votes) ---
+Emergency fund for textbooks and travel exists and is not means-tested beyond a short form.
+
+======================================================================
+Chunk 3  |  source: thread_laptop_specs.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+THREAD: How much laptop do I actually need for CS courses?
+
+--- reply 1 (31 votes) ---
+Less than the recommended spec page says. 16GB of RAM is the one number worth paying for; everything else you'll never notice.
+
+--- reply 2 (18 votes) ---
+Adding: the lab machines exist and are better than anything you'll buy. For the heavy assignments people just use those.
+
+--- reply 3 (12 votes) ---
+I did two years on an 8GB machine and it was fine until the last project, at which point it very much wasn't. 16 is the answer.
+
+======================================================================
+Chunk 4  |  source: thread_office_hours_etiquette.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+THREAD: Is it weird to go to office hours with no specific question?
+
+--- reply 1 (44 votes) ---
+No, and this is the single most common thing first years get wrong. 'I'm following the lectures but I don't feel like I understand the shape of it' is a completely normal thing to say.
+
+--- reply 2 (29 votes) ---
+They're usually empty. You are doing the instructor a favour by turning up.
+
+--- reply 3 (18 votes) ---
+If it helps, treat it as a standing appointment. Go every week for a month and it stops feeling like a thing.
+
+======================================================================
+Chunk 5  |  source: thread_professor_email.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+THREAD: Do professors actually answer email?
+
+--- reply 1 (21 votes) ---
+Varies enormously. General rule I've found: if the syllabus states a response window, it's honoured. If it doesn't, assume 48 hours and don't panic before then.
+
+--- reply 2 (33 votes) ---
+Office hours are dramatically more effective than email for anything that takes more than two sentences to answer. They're also usually empty.
+
+--- reply 3 (15 votes) ---
+Empty office hours is the biggest unused resource here and I say that having wasted a year not going.
+```
+
+**Criterion 5. No hallucinated answers**
+
+Question: "What is the deadline for assignments before they're considered late?"
+The corpus has no late cutoff, so the right answer is to say so. Run 1. The
+answer text is produced by `generate.py::answer_from_chunks`, called from
+`run_eval.py::run_once`, and written to the results file by `run_eval.py::main`.
+
+- Best distance: 0.4132 (passed the gate)
+- Sources retrieved: thread_first_year_regret.txt, thread_group_project.txt, thread_late_work.txt
+
+```
+Based on the provided documents, there is no mention of a specific deadline for assignments before they're considered late, though they do mention deadlines regarding asking for extensions (thread_late_work.txt). Therefore, I do not have enough information to answer this question.
+```
 
 ## Verdicts
 
