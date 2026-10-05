@@ -550,11 +550,100 @@ likely to prove that wrong, since both questions contain the exact word
 
 | Criterion                              | Target | Run 1 | Run 2 | Run 3 | Verdict |
 | -------------------------------------- | ------ | ----- | ----- | ----- | ------- |
-| 1. Retrieved chunk contains the answer | 4 of 5 |       |       |       |         |
-| 2. Every answer names a source         | 5 of 5 |       |       |       |         |
-| 3. Gate stops out-of-corpus questions  | 4 of 5 |       |       |       |         |
-| 4.                                     |        |       |       |       |         |
-| 5.                                     |        |       |       |       |         |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 3/5   | 3/5   | 3/5   | MISSED  |
+| 2. Every answer names a source         | 5 of 5 | 4/5   | 4/5   | 5/5   | MISSED  |
+| 3. Gate stops out-of-corpus questions  | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 4. One topic per chunk                 | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
+| 5. No hallucinated answers             | 4 of 5 | 2/2   | 2/2   | 2/2   | MET     |
+
+Scored from `results/run_2026-10-04_2248_after.md` by
+`scorer.py::criterion_table`, hybrid search on. Criterion 5 is counted the
+same way as in the before log, against the unit 2 revision in `criteria.md`.
+
+**Before and after, side by side:**
+
+| Criterion                              | Target | Before (runs 1, 2, 3) | After (runs 1, 2, 3) | Verdict       |
+| -------------------------------------- | ------ | --------------------- | -------------------- | ------------- |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 3/5, 3/5, 3/5         | 3/5, 3/5, 3/5        | MISSED both   |
+| 2. Every answer names a source         | 5 of 5 | 5/5, 5/5, 5/5         | 4/5, 4/5, 5/5        | MET to MISSED |
+| 3. Gate stops out-of-corpus questions  | 4 of 5 | 5/5, 5/5, 5/5         | 5/5, 5/5, 5/5        | MET both      |
+| 4. One topic per chunk                 | 4 of 5 | 5/5, 5/5, 5/5         | 5/5, 5/5, 5/5        | MET both      |
+| 5. No hallucinated answers             | 4 of 5 | 2/2, 2/2, 2/2         | 2/2, 2/2, 2/2        | MET both      |
+
+#### Real output, after
+
+Everything below is from `results/run_2026-10-04_2248_after.md`, except the
+retrieval listing, which I printed again with `app.py` because the results
+file keeps sources but not their order.
+
+**Criteria 1 and 2, on the one question that changed**
+
+Question: "What are the most common regrets for first-year students?"
+
+Retrieval, produced by `store.py::search` and `store.py::_fuse` (printed by
+`python app.py retrieve`). The `Gate:` line comes from `gate.py::check`:
+
+```
+#   distance   source                           preview
+----------------------------------------------------------------------------------------------------
+1   0.6714     thread_office_hours_etiquette.txt THREAD: Is it weird to go to office hours with no sp...
+2   0.6205     thread_pass_fail.txt             THREAD: When should you actually use the pass/fail o...
+3   0.6432     thread_first_gen.txt             THREAD: Anything specific for first-generation stude...
+
+Gate: best distance 0.621 is under the 0.7 cutoff
+```
+
+In the before run `thread_first_year_regret.txt` was first at 0.5956. Here it
+is gone. The expected phrase `pass/fail` is still in `thread_pass_fail.txt`,
+so criterion 1 counts this question as a pass.
+
+Run 1 answer, produced by `generate.py::answer_from_chunks`, called from
+`run_eval.py::run_once`. It names no source, so it fails criterion 2:
+
+```
+Based on the provided documents, the text does not mention the most common regrets for first-year students. Therefore, I do not have enough information to answer this question.
+```
+
+Run 3 answer, same function. It names two files, so it passes criterion 2:
+
+```
+Based on the provided documents, the text does not mention the most common regrets for first-year students, so I do not have enough information to answer that part of the question. 
+
+However, the documents do mention that first-year students commonly get the etiquette of office hours wrong by thinking it is weird to go with no specific question (*thread_office_hours_etiquette.txt*), and one student mentioned regretting spending a pass/fail option on an easy course (*thread_pass_fail.txt*).
+```
+
+**Criterion 3. Gate stops out-of-corpus questions**
+
+Produced by `run_eval.py::check_out_of_scope`, cutoff 0.7. Refused 5 of 5, at
+the same distances as the before run.
+
+| Out-of-scope question | Best distance | Gate |
+|---|---|---|
+| What is the capital of Mongolia? | 0.948 | refused |
+| How do I change the oil in a diesel engine? | 0.930 | refused |
+| Who won the 1994 World Cup? | 0.952 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.828 | refused |
+| How do I write a for loop in Rust? | 0.871 | refused |
+
+**Criterion 4. One topic per chunk**
+
+Chunking and the index did not change, so the five sampled chunks are the
+ones already shown under the before run log, produced by
+`chunker.py::split_documents`.
+
+**Criterion 5. No hallucinated answers**
+
+Question: "What is the deadline for assignments before they're considered late?"
+Run 1, produced by `generate.py::answer_from_chunks`.
+
+- Best distance: 0.4132 (passed the gate)
+- Sources retrieved: thread_first_year_regret.txt, thread_group_project.txt, thread_late_work.txt
+
+```
+Based on the provided documents, there is no mention of the specific deadline time or date for assignments before they are considered late (the documents only discuss what happens when something is handed in late or how to ask for extensions). Therefore, I do not have enough information to answer this question. 
+
+Source: `thread_late_work.txt`, `thread_first_year_regret.txt`, and `thread_group_project.txt`.
+```
 
 **Did it help?**
 
@@ -564,6 +653,34 @@ likely to prove that wrong, since both questions contain the exact word
      tell.
 
      Milestone 4. -->
+
+No. It made one criterion worse and moved none of the others.
+
+Criterion 2 went from 5/5 on every run to 4/5, 4/5 and 5/5, which turns it
+from MET to MISSED. One question did that. For "What are the most common
+regrets for first-year students?", meaning-only search ranked
+`thread_first_year_regret.txt` first at 0.5956. Keyword search ranked it
+fifth, because that thread never uses the word "regret". Its title is "What
+do you wish you'd known in first year?". The office-hours thread ranked first
+on keywords, since it shares "most", "common" and "first" with my question
+("the single most common thing first years get wrong"). After fusion the
+regrets thread fell to fourth and out of the top three. Without it the model
+said it didn't have enough information in runs 1 and 2 and named no source.
+In run 3 it gave a partial answer and cited two files.
+
+Criterion 1 stayed at 3/5 on all three runs, which is what I predicted before
+the run. Both deadline questions still get the right thread first, and
+neither thread has a deadline in it. That supports the diagnosis: the corpus
+has no deadline for retrieval to find.
+
+The run also showed a weakness in my scorer. Criterion 1 still counts the
+regrets question as a pass, because its expected phrase `pass/fail` appears
+in `thread_pass_fail.txt`, which was retrieved. The thread that answers the
+question was gone. So the 3/5 after is weaker than the 3/5 before, and one
+expected phrase was too thin a check for that question.
+
+Criteria 3, 4 and 5 did not move. The gate refused the same five out-of-scope
+questions at the same distances.
 
 ## What's Still Broken
 
